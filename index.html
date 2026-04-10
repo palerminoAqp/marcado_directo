@@ -6,7 +6,7 @@
     <title>Panel de Respaldo SBP 2026</title>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;800&display=swap" rel="stylesheet">
     <style>
-        /* 1. CONFIGURACIÓN BASE */
+        /* 1. CONFIGURACIÓN BASE: Estética Profesional Azul y Oro */
         html, body {
             height: 100%;
             margin: 0;
@@ -23,7 +23,7 @@
             box-sizing: border-box;
         }
 
-        /* 2. CABECERA */
+        /* 2. CABECERA: Título y Reloj Sincronizado */
         #header {
             flex: 0 0 auto;
             width: 100%;
@@ -61,7 +61,7 @@
             text-align: right;
         }
 
-        /* 3. CONTENEDOR DE BOTONES (SCROLLABLE) */
+        /* 3. GRILLA DE BOTONES: Ajuste automático de nombres */
         #contenedor-botones {
             flex: 1 1 auto;
             display: grid;
@@ -80,7 +80,7 @@
             border: 2px solid #d4af37;
             border-radius: 12px;
             padding: 15px;
-            font-size: 16px;
+            font-size: 15px;
             font-weight: 600;
             color: #ffffff;
             cursor: pointer;
@@ -89,7 +89,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            min-height: 80px;
+            min-height: 85px;
             text-align: center;
             text-transform: uppercase;
         }
@@ -101,18 +101,18 @@
             box-shadow: 0 12px 25px rgba(212, 175, 55, 0.4);
         }
 
-        /* SCROLLBAR */
+        /* SCROLLBAR PERSONALIZADA */
         #contenedor-botones::-webkit-scrollbar { width: 8px; }
         #contenedor-botones::-webkit-scrollbar-track { background: rgba(255,255,255,0.05); }
         #contenedor-botones::-webkit-scrollbar-thumb { background: #d4af37; border-radius: 4px; }
 
-        /* MODAL */
+        /* MODAL DE CONFIRMACIÓN */
         #modal-confirmacion {
             display: none;
             position: fixed;
             top: 50%; left: 50%;
             transform: translate(-50%, -50%);
-            width: 90%; max-width: 500px;
+            width: 90%; max-width: 450px;
             background: #ffffff;
             color: #0a112e;
             padding: 30px;
@@ -125,9 +125,9 @@
         }
 
         @keyframes pop { from { transform: translate(-50%, -50%) scale(0.7); opacity: 0; } }
-        #m-nombre { font-size: 24px; font-weight: 800; color: #0a112e; margin-bottom: 10px; }
-        #m-hora { font-size: 20px; font-weight: 600; color: #7f8c8d; }
-        .tag-tipo { display: inline-block; padding: 8px 15px; border-radius: 8px; color: white; margin-top: 15px; font-size: 18px; font-weight: bold; background-color: #2ecc71; }
+        #m-nombre { font-size: 22px; font-weight: 800; color: #0a112e; margin-bottom: 10px; }
+        #m-hora { font-size: 18px; font-weight: 600; color: #7f8c8d; }
+        .tag-tipo { display: inline-block; padding: 8px 15px; border-radius: 8px; color: white; margin-top: 15px; font-size: 16px; font-weight: bold; background-color: #2ecc71; }
         
         #overlay {
             display: none;
@@ -148,19 +148,20 @@
         <div id="reloj">00:00:00</div>
     </div>
 
-    <div id="contenedor-botones">Cargando lista de docentes...</div>
+    <div id="contenedor-botones">Obteniendo lista de personal...</div>
 
     <div id="overlay"></div>
     <div id="modal-confirmacion">
         <div id="m-nombre">---</div>
         <div id="m-hora">--:--:--</div>
-        <div class="tag-tipo">PROCESANDO MARCA...</div>
+        <div class="tag-tipo">SOLICITUD ENVIADA</div>
     </div>
 
     <script>
+        // URL de tu Script de Docentes (Asegúrate de que sea la última implementación)
         const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyvC4vzlJeYLvQiMcOYFR3b3RraWSRGlKIoQfRIjsSUBG32kigA8c7ENBLwUCDyFtQPKA/exec";
 
-        // 1. RELOJ SINCRONIZADO LIMA
+        // 1. RELOJ EN TIEMPO REAL (ZONA HORARIA LIMA)
         function actualizarReloj() {
             const ahora = new Date();
             const horaLima = ahora.toLocaleTimeString('es-PE', { 
@@ -170,17 +171,17 @@
             document.getElementById('reloj').innerText = horaLima;
         }
 
-        // 2. CARGAR DOCENTES DESDE EL SCRIPT
+        // 2. CARGAR LISTA DE DOCENTES DESDE GOOGLE SHEETS
         async function cargarDocentes() {
             try {
-                // v=getDocentes devuelve ID y NOMBRE
+                // v=getDocentes devuelve un JSON con {id, nombre}
                 const res = await fetch(`${SCRIPT_URL}?v=getDocentes`);
                 const docentes = await res.json();
                 const contenedor = document.getElementById("contenedor-botones");
                 contenedor.innerHTML = "";
 
                 if (!docentes || docentes.length === 0) {
-                    contenedor.innerText = "No se encontraron docentes.";
+                    contenedor.innerText = "No se encontraron datos en la hoja PERSONAL.";
                     return;
                 }
 
@@ -188,18 +189,18 @@
                     const btn = document.createElement("button");
                     btn.className = "btn-docente";
                     btn.innerText = doc.nombre;
-                    // Al hacer clic, enviamos el ID único del docente
+                    // Al pulsar, abre la validación con el ID del docente
                     btn.onclick = () => procesarMarcaManual(doc.id, doc.nombre);
                     contenedor.appendChild(btn);
                 });
             } catch (e) {
-                document.getElementById("contenedor-botones").innerText = "Error de conexión con el servidor.";
+                document.getElementById("contenedor-botones").innerText = "Error de conexión. Verifique la implementación del Script.";
             }
         }
 
-        // 3. PROCESAR MARCA (ABRE REGISTRO OFICIAL)
+        // 3. PROCESAR MARCA MANUAL
         function procesarMarcaManual(id, nombre) {
-            // Abrir ventana para validación de clave y registro
+            // Abre una ventana emergente para registrar o pedir la clave de seguridad
             window.open(`${SCRIPT_URL}?id=${id}`, 'marcaWin', 'width=450,height=600');
 
             const modal = document.getElementById("modal-confirmacion");
@@ -211,14 +212,14 @@
             modal.style.display = "block";
             overlay.style.display = "block";
 
-            // El modal se quita solo en 5 segundos
+            // El modal de aviso se oculta solo tras 5 segundos
             setTimeout(() => {
                 modal.style.display = "none";
                 overlay.style.display = "none";
             }, 5000);
         }
 
-        // INICIO
+        // INICIALIZACIÓN
         setInterval(actualizarReloj, 1000);
         actualizarReloj();
         cargarDocentes();
