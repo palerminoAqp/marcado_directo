@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Respaldo SBP 2026</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;800&display=swap" rel="stylesheet">
+    <style>
+        /* 1. CONFIGURACIÓN BASE */
+        html, body {
+            height: 100%;
+            margin: 0;
+            overflow: hidden;
+            background-color: #0a112e;
+            font-family: 'Montserrat', sans-serif;
+            color: #ffffff;
+        }
+
+        body {
+            display: flex;
+            flex-direction: column;
+            padding: 10px 20px;
+            box-sizing: border-box;
+        }
+
+        /* 2. CABECERA */
+        #header {
+            flex: 0 0 auto;
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+            border-bottom: 3px solid #d4af37;
+        }
+
+        #logo-container img {
+            height: 60px;
+            width: auto;
+            display: block;
+        }
+
+        h1 {
+            color: #ffffff;
+            font-weight: 800;
+            font-size: 24px;
+            margin: 0;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            text-align: center;
+            flex: 1;
+        }
+
+        #reloj {
+            font-size: 32px;
+            font-weight: 800;
+            color: #d4af37;
+            text-shadow: 2px 2px 5px rgba(0,0,0,0.5);
+            min-width: 150px;
+            text-align: right;
+        }
+
+        /* 3. CONTENEDOR DE BOTONES (SCROLLABLE) */
+        #contenedor-botones {
+            flex: 1 1 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 15px;
+            width: 100%;
+            max-width: 1400px;
+            margin: 0 auto;
+            overflow-y: auto;
+            padding: 10px;
+            box-sizing: border-box;
+        }
+
+        .btn-docente {
+            background-color: rgba(255, 255, 255, 0.05);
+            border: 2px solid #d4af37;
+            border-radius: 12px;
+            padding: 15px;
+            font-size: 16px;
+            font-weight: 600;
+            color: #ffffff;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 15px rgba(0,0,0,0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 80px;
+            text-align: center;
+            text-transform: uppercase;
+        }
+
+        .btn-docente:hover {
+            background-color: #d4af37;
+            color: #0a112e;
+            transform: translateY(-3px);
+            box-shadow: 0 12px 25px rgba(212, 175, 55, 0.4);
+        }
+
+        /* SCROLLBAR */
+        #contenedor-botones::-webkit-scrollbar { width: 8px; }
+        #contenedor-botones::-webkit-scrollbar-track { background: rgba(255,255,255,0.05); }
+        #contenedor-botones::-webkit-scrollbar-thumb { background: #d4af37; border-radius: 4px; }
+
+        /* MODAL */
+        #modal-confirmacion {
+            display: none;
+            position: fixed;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            width: 90%; max-width: 500px;
+            background: #ffffff;
+            color: #0a112e;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 0 50px rgba(0,0,0,0.8);
+            z-index: 1000;
+            text-align: center;
+            border: 6px solid #d4af37;
+            animation: pop 0.3s ease-out;
+        }
+
+        @keyframes pop { from { transform: translate(-50%, -50%) scale(0.7); opacity: 0; } }
+        #m-nombre { font-size: 24px; font-weight: 800; color: #0a112e; margin-bottom: 10px; }
+        #m-hora { font-size: 20px; font-weight: 600; color: #7f8c8d; }
+        .tag-tipo { display: inline-block; padding: 8px 15px; border-radius: 8px; color: white; margin-top: 15px; font-size: 18px; font-weight: bold; background-color: #2ecc71; }
+        
+        #overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.7);
+            z-index: 999;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="header">
+        <div id="logo-container">
+            <img src="insignia.png" alt="SBP" onerror="this.src='https://via.placeholder.com/60?text=SBP'">
+        </div>
+        <h1>REGISTRO DE ASISTENCIA</h1>
+        <div id="reloj">00:00:00</div>
+    </div>
+
+    <div id="contenedor-botones">Cargando lista de docentes...</div>
+
+    <div id="overlay"></div>
+    <div id="modal-confirmacion">
+        <div id="m-nombre">---</div>
+        <div id="m-hora">--:--:--</div>
+        <div class="tag-tipo">PROCESANDO MARCA...</div>
+    </div>
+
+    <script>
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyvC4vzlJeYLvQiMcOYFR3b3RraWSRGlKIoQfRIjsSUBG32kigA8c7ENBLwUCDyFtQPKA/exec";
+
+        // 1. RELOJ SINCRONIZADO LIMA
+        function actualizarReloj() {
+            const ahora = new Date();
+            const horaLima = ahora.toLocaleTimeString('es-PE', { 
+                timeZone: 'America/Lima', 
+                hour12: false 
+            });
+            document.getElementById('reloj').innerText = horaLima;
+        }
+
+        // 2. CARGAR DOCENTES DESDE EL SCRIPT
+        async function cargarDocentes() {
+            try {
+                // v=getDocentes devuelve ID y NOMBRE
+                const res = await fetch(`${SCRIPT_URL}?v=getDocentes`);
+                const docentes = await res.json();
+                const contenedor = document.getElementById("contenedor-botones");
+                contenedor.innerHTML = "";
+
+                if (!docentes || docentes.length === 0) {
+                    contenedor.innerText = "No se encontraron docentes.";
+                    return;
+                }
+
+                docentes.forEach(doc => {
+                    const btn = document.createElement("button");
+                    btn.className = "btn-docente";
+                    btn.innerText = doc.nombre;
+                    // Al hacer clic, enviamos el ID único del docente
+                    btn.onclick = () => procesarMarcaManual(doc.id, doc.nombre);
+                    contenedor.appendChild(btn);
+                });
+            } catch (e) {
+                document.getElementById("contenedor-botones").innerText = "Error de conexión con el servidor.";
+            }
+        }
+
+        // 3. PROCESAR MARCA (ABRE REGISTRO OFICIAL)
+        function procesarMarcaManual(id, nombre) {
+            // Abrir ventana para validación de clave y registro
+            window.open(`${SCRIPT_URL}?id=${id}`, 'marcaWin', 'width=450,height=600');
+
+            const modal = document.getElementById("modal-confirmacion");
+            const overlay = document.getElementById("overlay");
+            
+            document.getElementById("m-nombre").innerText = nombre;
+            document.getElementById("m-hora").innerText = document.getElementById("reloj").innerText;
+            
+            modal.style.display = "block";
+            overlay.style.display = "block";
+
+            // El modal se quita solo en 5 segundos
+            setTimeout(() => {
+                modal.style.display = "none";
+                overlay.style.display = "none";
+            }, 5000);
+        }
+
+        // INICIO
+        setInterval(actualizarReloj, 1000);
+        actualizarReloj();
+        cargarDocentes();
+    </script>
+</body>
+</html>
